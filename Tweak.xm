@@ -92,8 +92,7 @@ NSDictionary *modifyInfo(NSDictionary *info)
 
 %ctor
 {
-	//dlopen("/Library/MobileSubstrate/DynamicLibraries/UnlimShortcut.dylib", RTLD_LAZY);
-	dlopen("/opt/simject/UnlimShortcut.dylib", RTLD_LAZY);
+	dlopen("/Library/MobileSubstrate/DynamicLibraries/UnlimShortcut.dylib", RTLD_LAZY);
 	if (isiOS10Up) {
 		%init(iOS10);
 	} else {
