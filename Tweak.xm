@@ -1,4 +1,5 @@
 #import "../PS.h"
+#import <substrate.h>
 
 @interface BSCFBundle : NSBundle
 - (NSString *)bundleIdentifier;
@@ -33,7 +34,7 @@
 NSDictionary *modifyInfo(NSDictionary *info)
 {
 	NSMutableDictionary *minfo = [info.mutableCopy autorelease];
-	NSArray *items = isiOS10Up ? [minfo bs_safeObjectForKey:@"UIApplicationShortcutItems" ofType:[NSArray class]] :
+	NSArray *items = isiOS92Up ? [minfo bs_safeObjectForKey:@"UIApplicationShortcutItems" ofType:[NSArray class]] :
 								[minfo sbs_safeObjectForKey:@"UIApplicationShortcutItems" ofType:[NSArray class]];
 	NSMutableArray *mitems = [items.mutableCopy autorelease];
 	[mitems addObject:@{
@@ -54,7 +55,7 @@ NSDictionary *modifyInfo(NSDictionary *info)
 			@"CAMCaptureMode" : @6
 		}
 	}];
-	isiOS10Up ? [minfo bs_setSafeObject:mitems forKey:@"UIApplicationShortcutItems"] :
+	isiOS92Up ? [minfo bs_setSafeObject:mitems forKey:@"UIApplicationShortcutItems"] :
 		[minfo sbs_setSafeObject:mitems forKey:@"UIApplicationShortcutItems"];
 	return minfo;
 }
@@ -72,7 +73,26 @@ NSDictionary *modifyInfo(NSDictionary *info)
 
 %end
 
-%group preiOS10
+%group iOS92Up
+
+%hook SBApplicationInfo
+
+- (NSMutableArray <SBSApplicationShortcutItem *> *)_parseStaticShortcutItemsFromInfoDictionary:(NSDictionary *)info bundle:(BSCFBundle *)bundle
+{
+	if ([bundle.bundleIdentifier isEqualToString:@"com.apple.camera"]) {
+		NSMutableArray *array = %orig(modifyInfo(info), bundle);
+		for (SBSApplicationShortcutItem *item in array)
+			item.localizedTitle = [bundle localizedStringForKey:item.localizedTitle value:nil table:@"InfoPlist-OrbHW2"];
+		return array;
+	}
+	return %orig;
+}
+
+%end
+
+%end
+
+%group preiOS92
 
 %hook SBApplication
 
@@ -93,9 +113,12 @@ NSDictionary *modifyInfo(NSDictionary *info)
 %ctor
 {
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/UnlimShortcut.dylib", RTLD_LAZY);
-	if (isiOS10Up) {
-		%init(iOS10);
+	if (isiOS92Up) {
+		if (isiOS10Up) {
+			%init(iOS10);
+		}
+		%init(iOS92Up);
 	} else {
-		%init(preiOS10);
+		%init(preiOS92);
 	}
 }
